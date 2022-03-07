@@ -1,3 +1,4 @@
+from calendar import firstweekday
 from pyexpat.model import XML_CQUANT_NONE
 import random
 from shutil import move
@@ -14,6 +15,31 @@ from matplotlib.ticker import LinearLocator
 def print_bad_input_message():
     print("Bad input! Exiting...")
 
+def NewtonScalar(a, b, c, d, xApprox, maxIter = 1000):
+    dx = 0.000001
+    for i in range(maxIter):
+        secondDerivative = ((6 * a * xApprox) + (2 * b))
+        if(secondDerivative == 0):
+            secondDerivative -= np.sign(firstDerivative) * dx
+        firstDerivative = ((3 * a * xApprox ** 2) + (2 * b * xApprox) + c)
+        if(firstDerivative < dx and (i / maxIter) < 0.1):
+            xApprox += random.choice([-dx, dx])
+        xApprox -= np.sign(firstDerivative) * abs(firstDerivative / secondDerivative)
+    print(f"Newton yields x0 = {xApprox}")
+
+def NewtonMat(A, b, c, xApprox, maxIter = 10):
+    dx = 0.000001
+    for i in range(maxIter):
+        secondDerivative = (np.matrix(A).transpose() + np.matrix(A))
+        #if(secondDerivative == 0):
+            #secondDerivative -= np.sign(firstDerivative) * dx
+        #firstDerivative = (b + np.multiply(np.matrix(A), np.matrix(xApprox).transpose()) + 
+                           #np.multiply(np.matrix(A).transpose(), np.matrix(xApprox).transpose()))
+        #if(firstDerivative < dx and (i / maxIter) < 0.1):
+            #xApprox += random.choice([-dx, dx])
+        #xApprox -= (np.divide(firstDerivative, secondDerivative))
+        print(f"Newton yields x0 = {np.multiply(np.matrix(A), np.matrix(xApprox).transpose())}")
+        #print(f"Newton yields x0 = {xApprox} FIRST {firstDerivative} SECOND {secondDerivative} END")
 
 def gradient(a, b, c, d, x_starting, iterations_limit=1000):
     f = np.polynomial.Polynomial([d, c, b, a])
@@ -146,7 +172,9 @@ def main():
         c = -1
         d = 1
 
-        if 1:
+        NewtonScalar(a, b, c, d, x_starting, 1000)
+
+        if 0:
             stanisz_x = []
             stanisz_y = []
 
@@ -170,6 +198,7 @@ def main():
         c = 0
         B = [5, -2]
         A = [[1, 1], [0, 1]]
+        #NewtonMat(A, B, c, x_starting)
         x_found, y_found, intermediate_x, intermediate_y = gradient2(
             A, B, c, x_starting, 400)
         print(x_found, y_found)
