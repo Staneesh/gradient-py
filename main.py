@@ -11,11 +11,10 @@ from matplotlib.ticker import LinearLocator
 
 # stanisz: To have uniform messages for bad input
 
-
 def print_bad_input_message():
     print("Bad input! Exiting...")
 
-def NewtonScalar(a, b, c, d, xApprox, maxIter = 1000):
+def NewtonScalar(a, b, c, d, xApprox, maxIter = 100):
     dx = 0.000001
     for i in range(maxIter):
         secondDerivative = ((6 * a * xApprox) + (2 * b))
@@ -25,21 +24,20 @@ def NewtonScalar(a, b, c, d, xApprox, maxIter = 1000):
         if(firstDerivative < dx and (i / maxIter) < 0.1):
             xApprox += random.choice([-dx, dx])
         xApprox -= np.sign(firstDerivative) * abs(firstDerivative / secondDerivative)
-    print(f"Newton yields x0 = {xApprox}")
+    return xApprox
 
-def NewtonMat(A, b, c, xApprox, maxIter = 10):
+def NewtonMat(A, b, c, xApprox, maxIter = 100):
     dx = 0.000001
     for i in range(maxIter):
         secondDerivative = (np.matrix(A).transpose() + np.matrix(A))
         #if(secondDerivative == 0):
             #secondDerivative -= np.sign(firstDerivative) * dx
-        #firstDerivative = (b + np.multiply(np.matrix(A), np.matrix(xApprox).transpose()) + 
-                           #np.multiply(np.matrix(A).transpose(), np.matrix(xApprox).transpose()))
+        firstDerivative = np.matrix(b).transpose() + (np.matrix(A) * np.matrix(xApprox).transpose()) + (np.matrix(A).transpose() * np.matrix(xApprox).transpose())
         #if(firstDerivative < dx and (i / maxIter) < 0.1):
             #xApprox += random.choice([-dx, dx])
-        #xApprox -= (np.divide(firstDerivative, secondDerivative))
-        print(f"Newton yields x0 = {np.multiply(np.matrix(A), np.matrix(xApprox).transpose())}")
-        #print(f"Newton yields x0 = {xApprox} FIRST {firstDerivative} SECOND {secondDerivative} END")
+        xApprox = (np.matrix(xApprox).transpose() - (np.linalg.inv(secondDerivative) * firstDerivative)).transpose()
+        #print(f"Newton yields x0 = {np.linalg.inv(secondDerivative) * firstDerivative}---")
+    return xApprox
 
 def gradient(a, b, c, d, x_starting, iterations_limit=1000):
     f = np.polynomial.Polynomial([d, c, b, a])
@@ -172,7 +170,7 @@ def main():
         c = -1
         d = 1
 
-        NewtonScalar(a, b, c, d, x_starting, 1000)
+        print(f"Newton yields: x0 = {NewtonScalar(a, b, c, d, x_starting, 100)}")
 
         if 0:
             stanisz_x = []
@@ -194,11 +192,13 @@ def main():
         else:
             print(f"Solution found by gradient descent = {x_found}")
     else:
-        x_starting = [7.5, 7.5]
+        x_starting = [9.9, 9.9]
         c = 0
         B = [5, -2]
         A = [[1, 1], [0, 1]]
-        #NewtonMat(A, B, c, x_starting)
+
+        print(f"Newton yields: x0 = {NewtonMat(A, B, c, x_starting, 100)}")
+
         x_found, y_found, intermediate_x, intermediate_y = gradient2(
             A, B, c, x_starting, 400)
         print(x_found, y_found)
