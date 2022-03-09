@@ -1,5 +1,6 @@
 from calendar import firstweekday
 from cmath import nan
+from pyclbr import Function
 from pyexpat.model import XML_CQUANT_NONE
 import random
 from shutil import move
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 import sys
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
+import json
 
 # stanisz: To have uniform messages for bad input
 
@@ -118,22 +120,32 @@ def gradient2(A, B, c, x_starting, iterations_limit=1000):
 def main():
     print("Welcome to gradient-py!")
 
-    if 0:
+    if 1:
         # stanisz: Can we simplify this logic?
-        user_config = {}
+        user_config = {
+            "stoppingCondition" : {
+                "iterationsLimit" : None,
+                "valueToReach" : None,
+                "maxComputationTime" : None
+            },
+            "coefficients" : [],
+            "startingPoint" : None
+        }
+
+        user_config = json.dumps(user_config)
 
         print("What is the stopping condition?")
-        user_config["StoppingCondition"] = input(
+        StoppingConditionSelection = input(
             "Enter I for max. iterations, V for value-to-reach, C for max. computation time:")
 
         if StoppingConditionSelection == "I":
-            user_config["IterationsLimit"] = int(
+            user_config["stoppingCondition"]["iterationsLimit"] = int(
                 input("How many iterations is the computational limit?"))
         elif StoppingConditionSelection == "V":
-            user_config["ValueToReach"] = float(
+            user_config["stoppingCondition"]["valueToReach"] = float(
                 input("What is the value-to-reach?"))
         elif StoppingConditionSelection == "C":
-            user_config["MaxComputationTime"] = float(
+            user_config["stoppingCondition"]["maxComputationTime"] = float(
                 input("What is the maximum computation time (in seconds)?"))
         else:
             print_bad_input_message()
@@ -147,12 +159,14 @@ def main():
             b = float(input("Enter the scalar value of coefficient \'b\':"))
             c = float(input("Enter the scalar value of coefficient \'c\':"))
             d = float(input("Enter the scalar value of coefficient \'d\':"))
+            user_config["coefficients"].append({"a" : a, "b" : b, "c" : c, "d" : d})
             StartingPointSelection = input(
                 "If you would like to enter initial value of \'x\' manually enter M. Enter \'A\' for automatic choice:")
             if StartingPointSelection == "M":
                 # stanisz: Manual starting point selection
                 initial_x = float(
                     input("Enter the initial (scalar) value of \'x\':"))
+                user_config["startingPoint"] = initial_x    
             elif StartingPointSelection == "A":
                 # stanisz: Automatic starting point selection
                 print("\'x\' will be drawn uniformly from [low, high].")
@@ -161,10 +175,46 @@ def main():
                 high = float(
                     input("Enter the upper bound of the domain of \'x\' (high):"))
                 initial_x = random.uniform(low, high)
+                user_config["startingPoint"] = initial_x
             else:
                 print_bad_input_message()
                 exit(1)
-        elif FGselection == "G":
+        elif FunctionSelection == "G":
+            print("Enter the matrix A \'a\':")
+            rows = int(input("Enter the number of rows:"))
+            columns = int(input("Enter the number of columns:"))
+            A = []
+            for i in range(rows):          # A for loop for row entries
+                a =[]
+                for j in range(columns):      # A for loop for column entries
+                    a.append(int(input()))
+                A.append(a)
+            # Check matrix validity
+            
+            # For printing the matrix
+            for i in range(R):
+                for j in range(C):
+                    print(matrix[i][j], end = " ")
+                print()
+            b = float(input("Enter the scalar value of coefficient \'b\':"))
+            c = float(input("Enter the scalar value of coefficient \'c\':"))
+            user_config["coefficients"].append({"a" : a, "b" : b, "c" : c, "d" : d})
+            StartingPointSelection = input(
+                "If you would like to enter initial value of \'x\' manually enter M. Enter \'A\' for automatic choice:")
+            if StartingPointSelection == "M":
+                # stanisz: Manual starting point selection
+                initial_x = float(
+                    input("Enter the initial (scalar) value of \'x\':"))
+                user_config["startingPoint"] = initial_x    
+            elif StartingPointSelection == "A":
+                # stanisz: Automatic starting point selection
+                print("\'x\' will be drawn uniformly from [low, high].")
+                low = float(
+                    input("Enter the lower bound of the domain of \'x\' (low):"))
+                high = float(
+                    input("Enter the upper bound of the domain of \'x\' (high):"))
+                initial_x = random.uniform(low, high)
+                user_config["startingPoint"] = initial_x
             # stanisz: Computing G
             print("Currently not supported! Exiting...")
         else:
