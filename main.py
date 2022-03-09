@@ -1,4 +1,5 @@
 from calendar import firstweekday
+from cmath import nan
 from pyexpat.model import XML_CQUANT_NONE
 import random
 from shutil import move
@@ -17,27 +18,35 @@ def print_bad_input_message():
 def NewtonScalar(a, b, c, d, xApprox, maxIter = 100):
     dx = 0.000001
     for i in range(maxIter):
+        firstDerivative = ((3 * a * xApprox ** 2) + (2 * b * xApprox) + c)
         secondDerivative = ((6 * a * xApprox) + (2 * b))
+        if(firstDerivative < dx):
+            if(i == 0):
+                xApprox += random.choice([-dx, dx])
+            else:
+                break
         if(secondDerivative == 0):
             secondDerivative -= np.sign(firstDerivative) * dx
-        firstDerivative = ((3 * a * xApprox ** 2) + (2 * b * xApprox) + c)
-        if(firstDerivative < dx and (i / maxIter) < 0.1):
-            xApprox += random.choice([-dx, dx])
         xApprox -= np.sign(firstDerivative) * abs(firstDerivative / secondDerivative)
-    return xApprox
+    return xApprox.transpose()
 
 def NewtonMat(A, b, c, xApprox, maxIter = 100):
     dx = 0.000001
     for i in range(maxIter):
-        secondDerivative = (np.matrix(A).transpose() + np.matrix(A))
-        #if(secondDerivative == 0):
-            #secondDerivative -= np.sign(firstDerivative) * dx
         firstDerivative = np.matrix(b).transpose() + (np.matrix(A) * np.matrix(xApprox).transpose()) + (np.matrix(A).transpose() * np.matrix(xApprox).transpose())
-        #if(firstDerivative < dx and (i / maxIter) < 0.1):
-            #xApprox += random.choice([-dx, dx])
+        if(np.count_nonzero(firstDerivative < dx) == firstDerivative.size):
+            if(i == 0):
+                SIGN = np.ones([len(xApprox), len(xApprox[0])])
+                SIGN = [x * random.choice([-dx, dx]) for x in SIGN]
+                xApprox += np.matrix(SIGN)
+            else:
+                break
+        secondDerivative = (np.matrix(A).transpose() + np.matrix(A))
+        if(np.count_nonzero(secondDerivative) == 0):
+            print("Error Newton Method: Matrix 'A' Cannot Be A Zero Matrix")
+            return nan
         xApprox = (np.matrix(xApprox).transpose() - (np.linalg.inv(secondDerivative) * firstDerivative)).transpose()
-        #print(f"Newton yields x0 = {np.linalg.inv(secondDerivative) * firstDerivative}---")
-    return xApprox
+    return xApprox.transpose()
 
 def gradient(a, b, c, d, x_starting, iterations_limit=1000):
     f = np.polynomial.Polynomial([d, c, b, a])
@@ -197,6 +206,11 @@ def main():
         B = [5, -2]
         A = [[1, 1], [0, 1]]
 
+        #SIGN = np.ones([len(A), len(A[0])])
+
+        #E = [x * random.choice([-0.001, 0.001]) for x in SIGN]
+        #print(f"{np.matrix(E)}")
+        
         print(f"Newton yields: x0 = {NewtonMat(A, B, c, x_starting, 100)}")
 
         x_found, y_found, intermediate_x, intermediate_y = gradient2(
