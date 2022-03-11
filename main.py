@@ -5,6 +5,7 @@ import os
 from pyclbr import Function
 from pyexpat.model import XML_CQUANT_NONE #vscode extension?
 import random
+from re import I
 from shutil import move
 import numpy as np
 import math
@@ -55,15 +56,21 @@ def NewtonMat(A, b, c, xApprox, maxIter = 10000000000, time_limit = 10000000, va
     dx = 0.0000000001
     lowest_so_far = xApprox
     value_lowest_so_far = sys.float_info.max
+    intermediate_results_x = []  # Plotting
+    intermediate_results_y = []
 
     for i in range(maxIter):
         if time.time() - start_time > time_limit:
             break
         if value_lowest_so_far < value_limit:
             break
-
+        
         value_current = c + b * xApprox.transpose() + \
             xApprox * A * xApprox.transpose()
+
+        intermediate_results_x.append(xApprox.tolist()[0])
+        intermediate_results_y.append(value_current)
+
         if value_current.tolist()[0][0] < value_lowest_so_far:
             lowest_so_far = xApprox
             value_lowest_so_far = value_current.tolist()[0][0]
@@ -82,7 +89,7 @@ def NewtonMat(A, b, c, xApprox, maxIter = 10000000000, time_limit = 10000000, va
 
         xApprox = (np.matrix(xApprox).transpose() - (np.linalg.inv(secondDerivative) * firstDerivative)).transpose()
 
-    return lowest_so_far.transpose(), value_lowest_so_far
+    return lowest_so_far.transpose(), value_lowest_so_far, intermediate_results_x, intermediate_results_y
 
 def gradient(a, b, c, d, x_starting, maxIter = 10000000000, time_limit = 10000000, value_limit = -100000000):
 
@@ -307,7 +314,7 @@ def main():
 
                 user_config["startingPoint"] = initial_x   
 
-                x0, y0 = NewtonMat(user_config["coefficients"][0]["A"], user_config["coefficients"][0]["b"],
+                x0, y0, inter_x, inter_y = NewtonMat(user_config["coefficients"][0]["A"], user_config["coefficients"][0]["b"],
                                   float(user_config["coefficients"][0]["c"]),
                                   user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
@@ -319,6 +326,34 @@ def main():
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Gradient Descent yields the minimum point: x0 = {x_found}, y0 = {y_found}")
+
+                if 1 and len(initial_x) == 2:
+                    x_found = x_found.transpose().tolist()[ 0 ]
+                    a1 = user_config["coefficients"][0]["A"][0][0]
+                    a2 = user_config["coefficients"][0]["A"][0][1]
+                    a3 = user_config["coefficients"][0]["A"][1][0]
+                    a4 = user_config["coefficients"][0]["A"][1][1]
+                    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+                    # defining all 3 axes
+                    X = np.arange(x_found[0] -10, x_found[0] + 10, 0.5)
+                    Y = np.arange(x_found[1] - 10, x_found[1] + 10, 0.5)
+                    X, Y = np.meshgrid(X, Y)
+                    Z = user_config["coefficients"][0]["c"] + user_config["coefficients"][0]["b"][0]*X + \
+                        user_config["coefficients"][0]["b"][1]*Y + a1*X**2+X*Y*(a2+a3)+a4*Y**2
+
+                    surf = ax.scatter([x[0] for x in intermediate_x],
+                                    [x[1] for x in intermediate_x],
+                                    intermediate_y,
+                                    color='red', s=50)
+                    surf = ax.scatter([x[0] for x in inter_x],
+                                    [x[1] for x in inter_x],
+                                    inter_y,
+                                    color='green', s=50)
+
+                    surf = ax.plot_wireframe(X, Y, Z, cmap=cm.coolwarm)
+
+                    plt.show()
 
             elif StartingPointSelection == "A":
 
@@ -335,7 +370,7 @@ def main():
                 print("Chosen starting \'x\' is: ", initial_x)
                 user_config["startingPoint"] = initial_x
 
-                x0, y0 = NewtonMat(user_config["coefficients"][0]["A"], user_config["coefficients"][0]["b"],
+                x0, y0, inter_x, inter_y  = NewtonMat(user_config["coefficients"][0]["A"], user_config["coefficients"][0]["b"],
                                   float(user_config["coefficients"][0]["c"]),
                                   user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
@@ -347,6 +382,32 @@ def main():
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Gradient Descent yields the minimum point: x0 = {x_found}, y0 = {y_found}")
+                if 1 and columns == 2:
+                    x_found = x_found.transpose().tolist()[ 0 ]
+                    a1 = user_config["coefficients"][0]["A"][0][0]
+                    a2 = user_config["coefficients"][0]["A"][0][1]
+                    a3 = user_config["coefficients"][0]["A"][1][0]
+                    a4 = user_config["coefficients"][0]["A"][1][1]
+                    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+                    # defining all 3 axes
+                    X = np.arange(x_found[0] -10, x_found[0] + 10, 0.5)
+                    Y = np.arange(x_found[1] - 10, x_found[1] + 10, 0.5)
+                    X, Y = np.meshgrid(X, Y)
+                    Z = user_config["coefficients"][0]["c"] + user_config["coefficients"][0]["b"][0]*X + \
+                        user_config["coefficients"][0]["b"][1]*Y + a1*X**2+X*Y*(a2+a3)+a4*Y**2
+
+                    surf = ax.scatter([x[0] for x in intermediate_x],
+                                    [x[1] for x in intermediate_x],
+                                    intermediate_y,
+                                    color='red', s=50)
+                    surf = ax.scatter([x[0] for x in inter_x],
+                                    [x[1] for x in inter_x],
+                                    inter_y,
+                                    color='green', s=50)
+                    surf = ax.plot_wireframe(X, Y, Z, cmap=cm.coolwarm)
+
+                    plt.show()
 
         else:
             print_bad_input_message()
