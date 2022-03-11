@@ -201,9 +201,13 @@ def main():
                 "valueToReach" : -10000000000,
                 "maxComputationTime" : 10000000000
             },
+            "n" : 1,
             "coefficients" : [],
             "startingPoint" : None
         }
+
+        user_config["n"] = int(input(
+            "How many runs? "))
 
         StoppingConditionSelection = input(
             "Enter I for max. iterations, V for value-to-reach, T for max. computation time: ")
