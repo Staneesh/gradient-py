@@ -3,7 +3,7 @@ from cmath import nan
 from mimetypes import init
 import os
 from pyclbr import Function
-from pyexpat.model import XML_CQUANT_NONE
+from pyexpat.model import XML_CQUANT_NONE #vscode extension?
 import random
 from shutil import move
 import numpy as np
@@ -12,17 +12,27 @@ import matplotlib.pyplot as plt
 import sys
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
+import time
 
 # stanisz: To have uniform messages for bad input
 def print_bad_input_message():
     print("Bad input! Exiting...")
 
-def NewtonScalar(a, b, c, d, xApprox, maxIter = 100):
-
-    dx = 0.000001
+def NewtonScalar(a, b, c, d, xApprox, maxIter = 10000000000, time_limit = 10000000, value_limit = 100000000):
+    start_time = time.time()
+    dx = 0.0000000001
+    f = np.polynomial.Polynomial([d, c, b, a])
+    lowest_so_far = xApprox
 
     for i in range(maxIter):
+        if time.time() - start_time > time_limit:
+            break
+        if f(lowest_so_far) < value_limit:
+            break
 
+        if f(xApprox) < f(lowest_so_far):
+            lowest_so_far = xApprox    
+        
         firstDerivative = ((3 * a * xApprox ** 2) + (2 * b * xApprox) + c)
         secondDerivative = ((6 * a * xApprox) + (2 * b))
 
@@ -37,13 +47,25 @@ def NewtonScalar(a, b, c, d, xApprox, maxIter = 100):
     if(math.isnan(xApprox)):
         print("The Newton's method could not yield a proper minimum point (infinity)")
 
-    return xApprox.transpose()
+    return lowest_so_far
 
-def NewtonMat(A, b, c, xApprox, maxIter = 100):
-
-    dx = 0.000001
+def NewtonMat(A, b, c, xApprox, maxIter = 10000000000, time_limit = 10000000, value_limit = 100000000):
+    start_time = time.time()
+    dx = 0.0000000001
+    lowest_so_far = xApprox
+    value_lowest_so_far = sys.float_info.max
 
     for i in range(maxIter):
+        if time.time() - start_time > time_limit:
+            break
+        if value_lowest_so_far < value_limit:
+            break
+
+        value_current = c + b.transpose() * xApprox + \
+            xApprox.transpose() * A * xApprox
+        if value_current < value_lowest_so_far:
+            lowest_so_far = xApprox
+            value_lowest_so_far = value_current
 
         firstDerivative = np.matrix(b).transpose() + (np.matrix(A) * np.matrix(xApprox).transpose()) + (np.matrix(A).transpose() * np.matrix(xApprox).transpose())
         secondDerivative = (np.matrix(A).transpose() + np.matrix(A))
@@ -59,18 +81,23 @@ def NewtonMat(A, b, c, xApprox, maxIter = 100):
 
         xApprox = (np.matrix(xApprox).transpose() - (np.linalg.inv(secondDerivative) * firstDerivative)).transpose()
     
-    return xApprox.transpose()
+    return lowest_so_far.transpose()
 
-def gradient(a, b, c, d, x_starting, iterations_limit=1000):
+def gradient(a, b, c, d, x_starting, maxIter = 10000000000, time_limit = 10000000, value_limit = 100000000):
 
     f = np.polynomial.Polynomial([d, c, b, a])
     f_derivative = f.deriv()
     dx = 0.00000000001
     current_x = x_starting
     lowest_so_far = current_x
+    start_time = time.time()
 
-    for i in range(iterations_limit):
-
+    for i in range(maxIter):
+        if time.time() - start_time > time_limit:
+            break
+        if f(lowest_so_far) < value_limit:
+            break
+        
         if f(current_x) < f(lowest_so_far):
             lowest_so_far = current_x
 
@@ -78,12 +105,16 @@ def gradient(a, b, c, d, x_starting, iterations_limit=1000):
         if slope == 0:  # stanisz: Floating precision issues!
             current_x += random.choice([-dx, dx])
 
+        if(math.isnan(current_x)):
+            print("Gradient Descent method could not yield a proper minimum point (infinity)")
+
         step = -0.1 * slope
         current_x += step
 
+    
     return lowest_so_far, f(lowest_so_far)
 
-def gradient2(A, B, c, x_starting, iterations_limit=1000):
+def gradient2(A, B, c, x_starting, maxIter = 10000000000, time_limit = 10000000, value_limit = 100000000):
 
     A = np.matrix(A)
     B = np.matrix(B).transpose()  # column vector
@@ -92,12 +123,17 @@ def gradient2(A, B, c, x_starting, iterations_limit=1000):
     current_x = x_starting
     lowest_so_far = current_x
     value_lowest_so_far = sys.float_info.max
+    start_time = time.time()
 
     intermediate_results_x = []  # Plotting
     intermediate_results_y = []
 
-    for i in range(iterations_limit):
-
+    for i in range(maxIter):
+        if time.time() - start_time > time_limit:
+            break
+        if value_lowest_so_far < value_limit:
+            break
+        
         value_current = c + B.transpose() * current_x + \
             current_x.transpose() * A * current_x
         intermediate_results_x.append([x.item() for x in current_x])
@@ -195,6 +231,7 @@ def main():
                     input("Enter the upper bound of the domain of \'x\' (high): "))
 
                 initial_x = random.uniform(low, high)
+                print("Chosen starting \'x\' is: ", initial_x)
                 user_config["startingPoint"] = initial_x
 
                 x0 = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
@@ -275,6 +312,7 @@ def main():
 
                 initial_x = np.ones([1, columns])
                 initial_x = [x * random.uniform(low, high) for x in initial_x]
+                print("Chosen starting \'x\' is: ", initial_x)
                 user_config["startingPoint"] = initial_x
 
                 x0 = NewtonMat(user_config["coefficients"][0]["A"], user_config["coefficients"][0]["b"],
