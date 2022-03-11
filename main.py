@@ -181,7 +181,7 @@ def main():
     
     os.system("cls")
 
-    print("Welcome to gradient-py!")
+    print("Welcome to gradient-py! We will plot 3d charts regardless, it is not an option.")
 
     if 1:
         user_config = {
