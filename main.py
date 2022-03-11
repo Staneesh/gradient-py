@@ -177,18 +177,27 @@ def main():
 
     if 1:
         user_config = {
-            "iterationsLimit" : None,
+            "stoppingCondition" : {
+                "iterationsLimit" : 10000000000,
+                "valueToReach" : 10000000000,
+                "maxComputationTime" : 10000000000
+            },
             "coefficients" : [],
             "startingPoint" : None
         }
 
         StoppingConditionSelection = input(
-            "Enter C to enter configuration or N for default settings ")
+            "Enter I for max. iterations, V for value-to-reach, C for max. computation time: ")
 
-        if StoppingConditionSelection == "C":
-            user_config["iterationsLimit"] = int(input("How many iterations is the computational limit? "))
-        else:
-            user_config["iterationsLimit"] = 100
+        if StoppingConditionSelection == "I":
+            user_config["stoppingCondition"]["iterationsLimit"] = int(
+                input("How many iterations is the computational limit? "))
+        elif StoppingConditionSelection == "V":
+            user_config["stoppingCondition"]["valueToReach"] = float(
+                input("What is the value-to-reach? "))
+        elif StoppingConditionSelection == "C":
+            user_config["stoppingCondition"]["maxComputationTime"] = float(
+                input("What is the maximum computation time (in seconds)? "))
 
         FunctionSelection = input(
             "To compute F(x) enter F, to compute G(x) enter G: ")
@@ -213,11 +222,15 @@ def main():
 
                 x0 = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
                                   float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
-                                  initial_x)
+                                  user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
+                                  float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Newton yields the minimum point: x0 = {x0}")
 
-                x_found, y_found = gradient(a, b, c, d, initial_x)
+                x_found, y_found = gradient(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
+                                  float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
+                                  user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
+                                  float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Gradient Descent yields the minimum point: x0 = {x_found}")
 
@@ -236,13 +249,15 @@ def main():
 
                 x0 = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
                                   float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
-                                  user_config["startingPoint"])
+                                  user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
+                                  float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Newton yields the minimum point: x0 = {x0}")
 
                 x_found, y_found = gradient(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
-                                            float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
-                                            user_config["startingPoint"])
+                                  float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
+                                  user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
+                                  float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Gradient Descent yields the minimum point: x0 = {x_found}")
 
