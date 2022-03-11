@@ -24,6 +24,8 @@ def NewtonScalar(a, b, c, d, xApprox, maxIter = 10000000000, time_limit = 100000
     dx = 0.0000000001
     f = np.polynomial.Polynomial([d, c, b, a])
     lowest_so_far = xApprox
+    intermediate_results_x = []  # Plotting
+    intermediate_results_y = []
 
     for i in range(maxIter):
         if time.time() - start_time > time_limit:
@@ -33,7 +35,10 @@ def NewtonScalar(a, b, c, d, xApprox, maxIter = 10000000000, time_limit = 100000
 
         if f(xApprox) < f(lowest_so_far):
             lowest_so_far = xApprox    
-        
+
+        intermediate_results_x.append(xApprox)
+        intermediate_results_y.append(f(xApprox))
+
         firstDerivative = ((3 * a * xApprox ** 2) + (2 * b * xApprox) + c)
         secondDerivative = ((6 * a * xApprox) + (2 * b))
 
@@ -48,7 +53,7 @@ def NewtonScalar(a, b, c, d, xApprox, maxIter = 10000000000, time_limit = 100000
     if(math.isnan(xApprox)):
         print("The Newton's method could not yield a proper minimum point (infinity)")
 
-    return lowest_so_far, f(lowest_so_far)
+    return lowest_so_far, f(lowest_so_far), intermediate_results_x, intermediate_results_y
 
 def NewtonMat(A, b, c, xApprox, maxIter = 10000000000, time_limit = 10000000, value_limit = -100000000):
     xApprox = np.matrix(xApprox)
@@ -100,12 +105,18 @@ def gradient(a, b, c, d, x_starting, maxIter = 10000000000, time_limit = 1000000
     lowest_so_far = current_x
     start_time = time.time()
 
+    intermediate_results_x = []  # Plotting
+    intermediate_results_y = []
+
     for i in range(maxIter):
         if time.time() - start_time > time_limit:
             break
         if f(lowest_so_far) < value_limit:
             break
         
+        intermediate_results_x.append(current_x)
+        intermediate_results_y.append(f(current_x))
+
         if f(current_x) < f(lowest_so_far):
             lowest_so_far = current_x
 
@@ -120,7 +131,7 @@ def gradient(a, b, c, d, x_starting, maxIter = 10000000000, time_limit = 1000000
         current_x += step
 
     
-    return lowest_so_far, f(lowest_so_far)
+    return lowest_so_far, f(lowest_so_far), intermediate_results_x, intermediate_results_y
 
 def gradient2(A, B, c, x_starting, maxIter = 10000000000, time_limit = 10000000, value_limit = -100000000):
 
@@ -181,7 +192,7 @@ def main():
     
     os.system("cls")
 
-    print("Welcome to gradient-py! We will plot 3d charts regardless, it is not an option.")
+    print("Welcome to gradient-py! We will plot 2D/3D charts regardless, it is not an option.")
 
     if 1:
         user_config = {
@@ -228,19 +239,33 @@ def main():
                     input("Enter the initial (scalar) value of \'x\': "))
                 user_config["startingPoint"] = initial_x
 
-                x0, y0 = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
+                x0, y0, inter_x, inter_y = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
                                   float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
                                   user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Newton yields the minimum point: x0 = {x0}, y0 = {y0}")
 
-                x_found, y_found = gradient(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
+                x_found, y_found, intermediate_x, intermediate_y = gradient(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
                                   float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
                                   user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Gradient Descent yields the minimum point: x0 = {x_found}, y0 = {y_found}")
+
+                if 1:
+                    ax = plt.subplot()
+                    x = np.linspace(initial_x - 0.1, x_found + 0.1, 100)
+                    y = float(user_config["coefficients"][0]["a"]) * x ** 3 + \
+                        float(user_config["coefficients"][0]["b"]) * x ** 2 + \
+                        float(user_config["coefficients"][0]["c"]) * x + \
+                        float(user_config["coefficients"][0]["d"]) * 1
+                    plt.plot(x, y)
+                    ax.scatter(inter_x, inter_y, color='green', s=50, label='Newton')
+                    ax.scatter(intermediate_x, intermediate_y, color='red', s=50, label='Gradient Descent')
+                    ax.legend()
+                    plt.show()
+                    
 
             elif StartingPointSelection == "A":
                 # stanisz: Automatic starting point selection
@@ -255,20 +280,31 @@ def main():
                 print("Chosen starting \'x\' is: ", initial_x)
                 user_config["startingPoint"] = initial_x
 
-                x0, y0 = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
+                x0, y0, inter_x, inter_y = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
                                   float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
                                   user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Newton yields the minimum point: x0 = {x0}, y0 = {y0}")
 
-                x_found, y_found = gradient(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
+                x_found, y_found, intermediate_x, intermediate_y = gradient(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
                                   float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
                                   user_config["startingPoint"], int(user_config["stoppingCondition"]["iterationsLimit"]),
                                   float(user_config["stoppingCondition"]["maxComputationTime"]), float(user_config["stoppingCondition"]["valueToReach"]))
 
                 print(f"Gradient Descent yields the minimum point: x0 = {x_found}, y0 = {y_found}")
-
+                if 1:
+                    ax = plt.subplot()
+                    x = np.linspace(initial_x - 0.1, x_found + 0.1, 100)
+                    y = float(user_config["coefficients"][0]["a"]) * x ** 3 + \
+                        float(user_config["coefficients"][0]["b"]) * x ** 2 + \
+                        float(user_config["coefficients"][0]["c"]) * x + \
+                        float(user_config["coefficients"][0]["d"]) * 1
+                    plt.plot(x, y)
+                    ax.scatter(inter_x, inter_y, color='green', s=50, label='Newton')
+                    ax.scatter(intermediate_x, intermediate_y, color='red', s=50, label='Gradient Descent')
+                    ax.legend()
+                    plt.show()
             else:
                 print_bad_input_message()
                 exit(1)
