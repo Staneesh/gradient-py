@@ -1,5 +1,6 @@
 from calendar import firstweekday
 from cmath import nan
+from mimetypes import init
 from pyclbr import Function
 from pyexpat.model import XML_CQUANT_NONE
 import random
@@ -22,27 +23,23 @@ def NewtonScalar(a, b, c, d, xApprox, maxIter = 100):
     for i in range(maxIter):
         firstDerivative = ((3 * a * xApprox ** 2) + (2 * b * xApprox) + c)
         secondDerivative = ((6 * a * xApprox) + (2 * b))
-        if(firstDerivative < dx):
-            if(i == 0):
-                xApprox += random.choice([-dx, dx])
-            else:
-                break
+        if(firstDerivative == 0):
+            xApprox += random.choice([-dx, dx])
         if(secondDerivative == 0):
             secondDerivative -= np.sign(firstDerivative) * dx
         xApprox -= np.sign(firstDerivative) * abs(firstDerivative / secondDerivative)
+    if(math.isnan(xApprox)):
+        print("The Newton's method could not yield a proper minimum point (infinity)")
     return xApprox.transpose()
 
 def NewtonMat(A, b, c, xApprox, maxIter = 100):
     dx = 0.000001
     for i in range(maxIter):
         firstDerivative = np.matrix(b).transpose() + (np.matrix(A) * np.matrix(xApprox).transpose()) + (np.matrix(A).transpose() * np.matrix(xApprox).transpose())
-        if(np.count_nonzero(firstDerivative < dx) == firstDerivative.size):
-            if(i == 0):
-                SIGN = np.ones([len(xApprox), len(xApprox[0])])
-                SIGN = [x * random.choice([-dx, dx]) for x in SIGN]
-                xApprox += np.matrix(SIGN)
-            else:
-                break
+        if(np.count_nonzero(firstDerivative == 0) == firstDerivative.size):
+            SIGN = np.ones([len(xApprox), len(xApprox[0])])
+            SIGN = [x * random.choice([-dx, dx]) for x in SIGN]
+            xApprox += np.matrix(SIGN)
         secondDerivative = (np.matrix(A).transpose() + np.matrix(A))
         if(np.count_nonzero(secondDerivative) == 0):
             print("Error Newton Method: Matrix 'A' Cannot Be A Zero Matrix")
@@ -132,8 +129,6 @@ def main():
             "startingPoint" : None
         }
 
-        user_config = json.dumps(user_config)
-
         print("What is the stopping condition?")
         StoppingConditionSelection = input(
             "Enter I for max. iterations, V for value-to-reach, C for max. computation time:")
@@ -166,7 +161,13 @@ def main():
                 # stanisz: Manual starting point selection
                 initial_x = float(
                     input("Enter the initial (scalar) value of \'x\':"))
-                user_config["startingPoint"] = initial_x    
+                user_config["startingPoint"] = initial_x
+                x0 = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
+                                  float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
+                                  initial_x)
+                print(f"Newton yields the minimum point: x0 = {x0}")
+                x_found, y_found = gradient(a, b, c, d, initial_x)
+                print(f"Gradient Descent yields the minimum point: x0 = {x_found}")
             elif StartingPointSelection == "A":
                 # stanisz: Automatic starting point selection
                 print("\'x\' will be drawn uniformly from [low, high].")
@@ -176,47 +177,59 @@ def main():
                     input("Enter the upper bound of the domain of \'x\' (high):"))
                 initial_x = random.uniform(low, high)
                 user_config["startingPoint"] = initial_x
+                x0 = NewtonScalar(float(user_config["coefficients"][0]["a"]), float(user_config["coefficients"][0]["b"]),
+                                  float(user_config["coefficients"][0]["c"]), float(user_config["coefficients"][0]["d"]),
+                                  initial_x)
+                print(f"Newton yields the minimum point: x0 = {x0}")
+                x_found, y_found = gradient(a, b, c, d, initial_x)
+                print(f"Gradient Descent yields the minimum point: x0 = {x_found}")
+
             else:
                 print_bad_input_message()
                 exit(1)
         elif FunctionSelection == "G":
-            print("Enter the matrix A \'a\':")
+            print("Enter the matrix \'A\':")
             rows = int(input("Enter the number of rows:"))
             columns = int(input("Enter the number of columns:"))
             A = []
-            for i in range(rows):          # A for loop for row entries
+            for i in range(rows):        
                 a =[]
-                for j in range(columns):      # A for loop for column entries
-                    a.append(int(input()))
+                for j in range(columns):     
+                    a.append(float(input()))
                 A.append(a)
             # Check matrix validity
+
+            print(A)
             
-            # For printing the matrix
-            for i in range(R):
-                for j in range(C):
-                    print(matrix[i][j], end = " ")
-                print()
-            b = float(input("Enter the scalar value of coefficient \'b\':"))
+            b = float(input(f"Enter the vector \'b\', {columns} numbers:"))
+            b = []
+            for i in range(columns):     
+                b.append(float(input()))
+
             c = float(input("Enter the scalar value of coefficient \'c\':"))
-            user_config["coefficients"].append({"a" : a, "b" : b, "c" : c, "d" : d})
+
+            user_config["coefficients"].append({"A" : A, "b" : b, "c" : c})
             StartingPointSelection = input(
                 "If you would like to enter initial value of \'x\' manually enter M. Enter \'A\' for automatic choice:")
             if StartingPointSelection == "M":
                 # stanisz: Manual starting point selection
-                initial_x = float(
-                    input("Enter the initial (scalar) value of \'x\':"))
+                print(f"Enter the starting point \'x\', {columns} numbers:")
+                initial_x = []
+                for i in range(columns):     
+                    initial_x.append(float(input()))
                 user_config["startingPoint"] = initial_x    
             elif StartingPointSelection == "A":
                 # stanisz: Automatic starting point selection
                 print("\'x\' will be drawn uniformly from [low, high].")
                 low = float(
-                    input("Enter the lower bound of the domain of \'x\' (low):"))
+                    input("Enter the lower bound of the domain of \'xi\' (low):"))
                 high = float(
-                    input("Enter the upper bound of the domain of \'x\' (high):"))
-                initial_x = random.uniform(low, high)
+                    input("Enter the upper bound of the domain of \'xi\' (high):"))
+                initial_x = np.ones([1, columns])
+                initial_x = [x * random.uniform(low, high) for x in initial_x]
                 user_config["startingPoint"] = initial_x
             # stanisz: Computing G
-            print("Currently not supported! Exiting...")
+
         else:
             print_bad_input_message()
             exit(1)
@@ -255,18 +268,13 @@ def main():
         c = 0
         B = [5, -2]
         A = [[1, 1], [0, 1]]
-
-        #SIGN = np.ones([len(A), len(A[0])])
-
-        #E = [x * random.choice([-0.001, 0.001]) for x in SIGN]
-        #print(f"{np.matrix(E)}")
         
-        print(f"Newton yields: x0 = {NewtonMat(A, B, c, x_starting, 100)}")
+        #print(f"Newton yields: x0 = {NewtonMat(A, B, c, x_starting, 100)}")
 
         x_found, y_found, intermediate_x, intermediate_y = gradient2(
             A, B, c, x_starting, 400)
-        print(x_found, y_found)
-        if 1 and len(x_starting) == 2:
+        #print(x_found, y_found)
+        if 0 and len(x_starting) == 2:
             a1 = A[0][0]
             a2 = A[0][1]
             a3 = A[1][0]
